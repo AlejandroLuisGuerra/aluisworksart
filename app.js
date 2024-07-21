@@ -1,57 +1,51 @@
-// Set up the scene, camera, and renderer
-const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-const renderer = new THREE.WebGLRenderer();
-renderer.setSize(window.innerWidth, window.innerHeight);
-document.getElementById('cube-container').appendChild(renderer.domElement);
+document.addEventListener('DOMContentLoaded', () => {
+    // Smooth scroll functionality (if needed)
+    const smoothScroll = (target, duration) => {
+        const targetElement = document.querySelector(target);
+        const targetPosition = targetElement.getBoundingClientRect().top;
+        const startPosition = window.pageYOffset;
+        let startTime = null;
 
-// Define the images for the cube faces
-const images = [
-    'images/image1.jpg', // Example relative path
-    'images/image2.jpg',
-    'images/image3.jpg',
-    'images/image4.jpg',
-    'images/image5.jpg',
-    'images/image6.jpg'
-];
+        const animateScroll = currentTime => {
+            if (startTime === null) startTime = currentTime;
+            const timeElapsed = currentTime - startTime;
+            const run = ease(timeElapsed, startPosition, targetPosition, duration);
+            window.scrollTo(0, run);
+            if (timeElapsed < duration) requestAnimationFrame(animateScroll);
+        };
 
-// Load the images and create materials for each face
-const materials = images.map((image, index) => {
-    const texture = new THREE.TextureLoader().load(
-        image,
-        () => {
-            console.log(`Image ${index + 1} loaded successfully`);
-        },
-        undefined,
-        (err) => {
-            console.error(`Error loading image ${index + 1}:`, err);
-        }
-    );
-    return new THREE.MeshBasicMaterial({ map: texture });
-});
+        const ease = (t, b, c, d) => {
+            t /= d / 2;
+            if (t < 1) return c / 2 * t * t + b;
+            t--;
+            return -c / 2 * (t * (t - 2) - 1) + b;
+        };
 
-// Create a cube geometry and apply the materials
-const geometry = new THREE.BoxGeometry();
-const cube = new THREE.Mesh(geometry, materials);
-scene.add(cube);
+        requestAnimationFrame(animateScroll);
+    };
 
-camera.position.z = 5;
+    document.querySelectorAll('.content a').forEach(anchor => {
+        anchor.addEventListener('click', function(e) {
+            e.preventDefault();
+            const target = this.getAttribute('href');
+            smoothScroll(target, 1000);
+        });
+    });
 
-// Add controls to allow the user to rotate the cube
-const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    // Fade-in functionality
+    const parallaxElements = document.querySelectorAll('.parallax, .content');
 
-// Function to animate the scene
-function animate() {
-    requestAnimationFrame(animate);
-    controls.update();
-    renderer.render(scene, camera);
-}
+    const checkVisibility = () => {
+        parallaxElements.forEach(el => {
+            const rect = el.getBoundingClientRect();
+            if (rect.top <= window.innerHeight && rect.bottom >= 0) {
+                el.classList.add('visible');
+            } else {
+                el.classList.remove('visible');
+            }
+        });
+    };
 
-animate();
-
-// Handle window resize
-window.addEventListener('resize', () => {
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
+    window.addEventListener('scroll', checkVisibility);
+    checkVisibility();  // Initial check on load
 });
